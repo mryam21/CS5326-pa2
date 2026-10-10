@@ -21,7 +21,8 @@ def main():
     parser.add_argument("--generator", required=True)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--max_new_tokens", type=int, default=512)
-    parser.add_argument("--repetition_penalty", type=float, default=1.0)
+    parser.add_argument("--repetition_penalty", type=float, default=1.1,
+                        help="1.1 for every model in the final comparison (Task 2 baseline was run at 1.0)")
     parser.add_argument("--no_repeat_ngram_size", type=int, default=0)
     parser.add_argument("--limit", type=int, default=None, help="only the first N prompts (sanity check)")
     args = parser.parse_args()
