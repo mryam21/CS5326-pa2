@@ -6,24 +6,25 @@ code itself in this file.
 """
 
 from __future__ import annotations
+from alignment import sft
 
 
 def build_sft_batch(tokenizer, prompts, responses, max_length):
     """Return input_ids, attention_mask, and response-only labels."""
 
-    raise NotImplementedError("Connect this adapter to your SFT batch builder")
+    return sft.build_lm_batch(tokenizer, prompts, responses, max_length)
 
 
 def compute_response_logprobs(model, tokenizer, prompts, responses, max_length):
     """Return one summed response-token log-probability per input row."""
 
-    raise NotImplementedError("Connect this adapter to your log-probability code")
+    return sft.compute_response_logprobs(model, tokenizer, prompts, responses, max_length)
 
 
 def compute_sft_loss(model, tokenizer, prompts, responses, max_length):
     """Return a scalar response-only SFT loss using either documented reduction."""
 
-    raise NotImplementedError("Connect this adapter to your SFT loss code")
+    return sft.compute_sft_loss(model, tokenizer, prompts, responses, max_length)
 
 
 def build_dpo_batch(tokenizer, prompts, chosen_responses, rejected_responses, max_length):
