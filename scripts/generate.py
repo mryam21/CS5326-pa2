@@ -75,15 +75,16 @@ def main():
 
         texts = tokenizer.batch_decode(generated[:, enc["input_ids"].shape[1] :], skip_special_tokens=True)
         for row, text in zip(batch, texts):
-            results.append(
-                {
-                    "id": row["id"],
-                    "instruction": row["instruction"],
-                    "output": text.split(STOP_STRING)[0].strip(),
-                    "generator": args.generator,
-                    "dataset": row["dataset"],
-                }
-            )
+            record = {
+                "id": row["id"],
+                "instruction": row["instruction"],
+                "output": text.split(STOP_STRING)[0].strip(),
+                "generator": args.generator,
+                "dataset": row["dataset"],
+            }
+            # Keep eval-set metadata (e.g. HH category / expected_behavior) for per-category analysis.
+            record.update({k: row[k] for k in ("category", "expected_behavior") if k in row})
+            results.append(record)
 
         out.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"{len(results)}/{len(done) + len(todo)} saved")
