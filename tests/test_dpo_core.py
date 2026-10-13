@@ -1,4 +1,4 @@
-"""Edge-case checks for alignment/dpo.py beyond the public smoke tests."""
+"""Extra tests for alignment/dpo.py."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def test_identical_policy_and_reference_give_log2_zero_accuracy_zero_margin():
     loss = dpo_loss_from_logps(*logps, beta=0.1)
     metrics = dpo_metrics(*logps, beta=0.1)
     torch.testing.assert_close(loss, torch.log(torch.tensor(2.0)))
-    assert metrics["correct"].sum().item() == 0  # strict r_w > r_l (manual 10.5)
+    assert metrics["correct"].sum().item() == 0  # strict r_w > r_l
     assert metrics["margins"].abs().max().item() == 0
 
 

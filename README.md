@@ -1,24 +1,39 @@
-# Small-Model Alignment Starter
+# CS5326 PA2 — Small-Model Alignment: SFT + DPO
 
-This branch is the student starter package for the SFT + DPO alignment assignment. It is intentionally minimal: it provides the tested environment metadata, assignment PDF, fixed evaluation/data files, and no completed training implementation.
+**Author:** Mariyam Liaqat (LUMS) · **Report:** [`report/report.pdf`](report/report.pdf)
 
-## What Is Included
+SFT and from-scratch DPO on `Qwen/Qwen2.5-0.5B` (HH-RLHF and UltraFeedback), plus a TRL `DPOTrainer` + LoRA
+persona adapter on `HuggingFaceTB/SmolLM2-360M-Instruct`, evaluated with blinded pairwise judgments from
+`google/gemini-3.6-flash` through `kaggle_benchmarks`.
 
-```text
-requirements.txt
-pyproject.toml
-submission_adapter.py
-tests/test_public_adapter_smoke.py
-tests/toy_lm.py
-docs/assignment_manual.pdf
-data/persona_lora/ramsay_style_preferences.json
-data/persona_lora/README.md
-eval_sets/hh_rlhf_eval_300_seed42.json
-```
+## Results (judge: `google/gemini-3.6-flash`, n = 300 per set)
 
-## Recommended Kaggle Setup
+| Comparison | Eval set | Win / Loss / Tie | Win rate (excl. ties) |
+|---|---|---|---|
+| HH-DPO vs SFT | HH safety (synthetic, 300) | 158 / 98 / 44 | **61.7%** |
+| UF-DPO vs SFT | AlpacaEval subset (300, seed 42) | 126 / 127 / 47 | 49.8% |
+| SFT vs base (extra) | AlpacaEval subset | 124 / 149 / 27 | 45.4% |
+| LoRA-DPO vs base, style | Persona prompts (24) | 18 / 1 / 5 | 94.7% |
+| LoRA-DPO vs base, helpfulness | Persona prompts (24) | 10 / 13 / 1 | 43.5% |
 
-Use a Kaggle notebook with the `GPU T4 x2` accelerator. After cloning this repository/branch, run:
+## Where the code is
+
+| What | File |
+|---|---|
+| SFT batching, response-only masking, log-probs, loss | `alignment/sft.py` |
+| DPO batching, loss, rewards/metrics, reference handling | `alignment/dpo.py` |
+| Optimizer, scheduler, logging, checkpointing | `alignment/train_utils.py` |
+| SFT training loop (own loop, no HF `Trainer`) | `scripts/train_sft.py` |
+| DPO training loop (own loop, no TRL) | `scripts/train_dpo.py` |
+| LoRA persona DPO (TRL `DPOTrainer` + PEFT) | `scripts/train_lora_dpo.py` |
+| Grader interface | `submission_adapter.py` |
+| Prompt template | `prompt_format.py` |
+
+Tests: `PYTHONPATH=. python -m pytest -q tests/` (public adapter smoke tests + our SFT/DPO unit tests; CPU only).
+
+## Reproducing (Kaggle, GPU T4 x2, seed 42 everywhere)
+
+Setup cell in every notebook (keeps Kaggle's PyTorch):
 
 ```bash
 python -m pip uninstall -y -q torchao || true
@@ -26,51 +41,28 @@ python -m pip install -q "transformers>=4.43.0,<5" "datasets>=2.18,<5" huggingfa
 python -m pip install -q -e . --no-deps
 ```
 
-This keeps Kaggle's preinstalled CUDA-compatible PyTorch intact, avoids known stale `torchao` / PEFT conflicts, and makes the local repository importable without replacing the GPU stack.
+One notebook per stage; each stage's output is attached to the next via *Add Input → Your Work*.
 
-## What You Need To Build
+| Stage (notebook) | Commands |
+|---|---|
+| Setup + baseline (`AdvGenAI PA2`) | `python scripts/make_alpaca_subset.py` · `python scripts/generate.py --model_path Qwen/Qwen2.5-0.5B --eval_set eval_sets/alpaca_eval_300_seed42.json --out outputs/generations/base_alpaca_eval.json --generator qwen2.5-0.5b-base --repetition_penalty 1.0` |
+| SFT (`pa2-sft`) | `python scripts/make_sft_data.py` · `python scripts/train_sft.py` |
+| HH DPO (`pa2-dpo-hh`) | `python scripts/make_dpo_data.py --source hh` · `python scripts/train_dpo.py --sft_checkpoint outputs/sft_run/best --train_file outputs/data/dpo_hh/train.jsonl --val_file outputs/data/dpo_hh/val.jsonl --run_dir outputs/dpo_hh_run` |
+| UF DPO (`pa2-dpo-uf`) | same with `--source uf` and `dpo_uf` paths |
+| LoRA persona (`pa2-lora`) | `python scripts/train_lora_dpo.py` (3 epochs; ablation `--epochs 1 --out_dir outputs/lora_dpo_1ep`) · `python scripts/generate_persona.py --adapter outputs/lora_dpo_run/adapter --out outputs/generations/persona_lora.json --generator lora` |
+| Generation + pairs + plots (`pa2-generate`) | `scripts/generate.py` for each model/eval set (greedy, repetition penalty 1.1, 512 new tokens) · `scripts/build_pairs.py` · `scripts/plot_training.py` |
+| Judging (`pa2-judge`, Kaggle **benchmark** notebook) | `python scripts/judge_pairwise_kaggle.py --pairs_path outputs/pairs/<name>.jsonl --output_path outputs/judgments/<name>.jsonl --judge_model google/gemini-3.6-flash --batch_size 5 --sleep_seconds 5 --max_retries 3 --reuse_judgments` |
 
-You will add your own training and evaluation code on top of this starter. At minimum, your project should implement:
+## Outputs in this repository
 
-- SFT training on 30,000 examples.
-- From-scratch DPO on HH-RLHF-style preference data.
-- From-scratch DPO on UltraFeedback-style preference data.
-- TRL `DPOTrainer` + LoRA training on the provided persona preference data.
-- Generation and DPO-vs-SFT evaluation outputs.
-- A short final report with plots and analysis.
-
-Read `docs/assignment_manual.pdf` for the full requirements and suggested workflow.
-
-## Submission Adapter And Public Tests
-
-Keep the six function signatures in `submission_adapter.py` unchanged. Implement
-each function as a small wrapper around your own SFT/DPO code. The grader uses
-this stable interface so your internal file and class organization can remain
-your choice.
-
-Run the public tests from the repository root:
-
-```bash
-python -m pip install -q pytest
-PYTHONPATH=. python -m pytest -q tests/test_public_adapter_smoke.py
+```text
+outputs/sft_run/, dpo_hh_run/, dpo_uf_run/   config.json, metrics.jsonl, summary.json
+outputs/lora_dpo_run/, lora_dpo_1ep/          log_history.json, summary.json, split.json
+outputs/data/*/summary.json                   data filtering counts
+outputs/generations/                          all model outputs + *.config.json with exact decoding settings
+outputs/pairs/                                blinded pairwise files (model identities only under "hidden")
+outputs/judgments/                            per-pair verdicts, *_summary.json, full judge logs
+outputs/figures/                              training plots used in the report
 ```
 
-The tests use a tiny local tokenizer and model, so they do not download a model,
-load the assignment datasets, or require a GPU. The starter adapter raises
-`NotImplementedError` until you connect it to your implementation. Passing the
-public tests checks the interface and a few basic invariants; the private grader
-also checks numerical correctness and harder edge cases described in the manual.
-
-For `compute_sft_loss`, the assignment accepts either the mean of per-example
-summed response negative log probabilities or the mean over all unmasked response
-tokens. Use one reduction consistently and document it in the report.
-
-## Fixed Files
-
-- `eval_sets/hh_rlhf_eval_300_seed42.json` is the fixed synthetic helpful/harmless evaluation set.
-- For AlpacaEval-style evaluation, use 300 prompts with seed `42` so comparisons are consistent.
-- `data/persona_lora/ramsay_style_preferences.json` is the small preference dataset for the LoRA-DPO persona task.
-
-## Saving Work On Kaggle
-
-Kaggle sessions are temporary. Write important outputs under `/kaggle/working`, save notebook versions, and archive checkpoints/generations as zip files or Kaggle output datasets before ending a session.
+Model checkpoints are not committed (size); they are in the Kaggle notebook outputs listed above.

@@ -1,0 +1,28 @@
+{
+  "config": {
+    "dataset": "HuggingFaceH4/ultrachat_200k",
+    "model": "Qwen/Qwen2.5-0.5B",
+    "n_train": 30000,
+    "n_val": 1000,
+    "seed": 42,
+    "max_length": 512,
+    "max_prompt_tokens": 384,
+    "out_dir": "outputs/data/sft"
+  },
+  "train": {
+    "source_split": "train_sft",
+    "kept": 30000,
+    "seen": 34950,
+    "bad_turns": 1,
+    "prompt_too_long": 4949,
+    "will_be_truncated": 10049
+  },
+  "val": {
+    "source_split": "test_sft",
+    "kept": 1000,
+    "seen": 1174,
+    "bad_turns": 0,
+    "prompt_too_long": 174,
+    "will_be_truncated": 347
+  }
+}

@@ -1,16 +1,6 @@
-"""Supervised fine-tuning of Qwen2.5-0.5B with our own training loop (manual Task 3).
-
-Checklist from manual Section 9.1, and where each item lives:
-  1. prompt formatting ............ prompt_format.format_prompt (same template as eval)
-  2. response-only loss masking ... alignment.sft.build_lm_batch / sft_loss_from_batch
-  3. padding + attention masks .... alignment.sft.build_lm_batch
-  4. gradient accumulation ........ the micro-batch loop in train()
-  5. fp16 autocast ................ torch.autocast(..., dtype=torch.float16)
-  6. fp32 weights + grad scaling .. model loaded in fp32, torch.amp.GradScaler
-  7. gradient clipping ............ clip_grad_norm_ after scaler.unscale_
-  8. validation loss .............. evaluate()
-  9. best + final checkpoints ..... save_checkpoint(...) to <run_dir>/best and /final
-"""
+"""SFT of Qwen2.5-0.5B with a plain PyTorch loop: response-only loss, fp16 autocast with fp32
+weights and GradScaler, gradient accumulation and clipping, warmup + cosine LR, and
+best/final checkpoints chosen by validation loss."""
 
 from __future__ import annotations
 
@@ -42,7 +32,6 @@ def parse_args():
     p.add_argument("--train_file", default="outputs/data/sft/train.jsonl")
     p.add_argument("--val_file", default="outputs/data/sft/val.jsonl")
     p.add_argument("--run_dir", default="outputs/sft_run")
-    # Defaults = manual Section 9.2
     p.add_argument("--max_length", type=int, default=512)
     p.add_argument("--batch_size", type=int, default=2)
     p.add_argument("--grad_accum", type=int, default=16)
@@ -51,12 +40,10 @@ def parse_args():
     p.add_argument("--weight_decay", type=float, default=0.1)
     p.add_argument("--max_grad_norm", type=float, default=1.0)
     p.add_argument("--epochs", type=int, default=1)
-    # Bookkeeping
     p.add_argument("--eval_every", type=int, default=100, help="optimizer steps between validations")
     p.add_argument("--log_every", type=int, default=10, help="optimizer steps between train-loss logs")
     p.add_argument("--eval_batch_size", type=int, default=8)
     p.add_argument("--seed", type=int, default=42)
-    # Pilot runs / memory
     p.add_argument("--max_train_examples", type=int, default=None)
     p.add_argument("--max_val_examples", type=int, default=None)
     p.add_argument("--gradient_checkpointing", action="store_true", help="use if you hit CUDA OOM")
@@ -70,7 +57,7 @@ def make_loader(rows, tokenizer, max_length, batch_size, shuffle, seed):
 
     def collate(items):
         ps, rs = zip(*items)
-        # Pad only to the longest row in this batch: same loss, much less wasted compute.
+        # dynamic padding: pad to the longest row in the batch, not to max_length
         return build_lm_batch(tokenizer, list(ps), list(rs), max_length, pad_to_max_length=False)
 
     generator = torch.Generator().manual_seed(seed)
@@ -79,7 +66,7 @@ def make_loader(rows, tokenizer, max_length, batch_size, shuffle, seed):
 
 @torch.no_grad()
 def evaluate(model, loader, use_amp):
-    """Token-mean validation loss over the whole validation set (same reduction as training)."""
+    """Token-mean loss over the whole validation set."""
     model.eval()
     total_logp, total_tokens = 0.0, 0
     for batch in loader:
@@ -103,10 +90,9 @@ def main():
     use_amp = device.type == "cuda"
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
-    # FP32 master weights (manual 9.1 item 6). Autocast runs the matmuls in fp16;
-    # the optimizer updates the fp32 copy, so tiny updates are not rounded away.
+    # weights stay in fp32; autocast runs the forward pass in fp16
     model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.float32).to(device)
-    model.config.use_cache = False  # the KV cache is only useful for generation
+    model.config.use_cache = False
     if args.gradient_checkpointing:
         model.gradient_checkpointing_enable()
     model.train()
@@ -128,7 +114,6 @@ def main():
         flush=True,
     )
 
-    # Validation before any training: the starting point of the val-loss curve.
     initial_val = evaluate(model, val_loader, use_amp)
     logger.log(type="val", step=0, val_loss=initial_val)
     print(f"step 0 | val_loss {initial_val:.4f}", flush=True)
@@ -139,7 +124,7 @@ def main():
 
     for epoch in range(args.epochs):
         for i, batch in enumerate(train_loader):
-            # Each optimizer step covers grad_accum micro-batches (fewer for the last one).
+            # the last group of an epoch can be shorter than grad_accum
             group_start = (i // args.grad_accum) * args.grad_accum
             group_size = min(args.grad_accum, len(train_loader) - group_start)
 
@@ -147,20 +132,19 @@ def main():
                 summed, counts = response_logprobs_from_batch(model, batch)
                 loss = -summed.sum() / counts.sum().clamp_min(1)
 
-            # Divide so the accumulated gradient is the AVERAGE over micro-batches, not their sum.
             scaler.scale(loss / group_size).backward()
             window_loss += loss.item()
             window_micro += 1
 
             if i - group_start + 1 < group_size:
-                continue  # keep accumulating
+                continue
 
-            # Clip the TRUE gradient: undo the loss scaling first.
+            # unscale before clipping so the clip threshold applies to the real gradients
             scaler.unscale_(optimizer)
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm).item()
 
             scale_before = scaler.get_scale()
-            scaler.step(optimizer)   # skipped automatically if the grads contain inf/NaN
+            scaler.step(optimizer)  # skipped by the scaler if grads overflowed
             scaler.update()
             if use_amp and scaler.get_scale() < scale_before:
                 skipped += 1

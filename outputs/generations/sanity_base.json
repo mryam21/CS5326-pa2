@@ -1,0 +1,37 @@
+[
+  {
+    "id": "alpaca-eval-42-0000",
+    "instruction": "Create a short, concise summary of the paper based on its abstract.\n\nFew-shot learning (FSL) is one of the key future steps in machine learning and raises a lot of attention. In this paper, we focus on the FSL problem of dialogue understanding, which contains two closely related tasks: intent detection and slot filling. Dialogue understanding has been proven to benefit a lot from jointly learning the two sub-tasks. However, such joint learning becomes challenging in the few-shot scenarios: on the one hand, the sparsity of samples greatly magnifies the difficulty of modeling the connection between the two tasks; on the other hand, how to jointly learn multiple tasks in the few-shot setting is still less investigated. In response to this, we introduce FewJoint, the first FSL benchmark for joint dialogue understanding. FewJoint provides a new corpus with 59 different dialogue domains from real industrial API and a code platform to ease FSL experiment set-up, which are expected to advance the research of this field. Further, we find that insufficient performance of the few-shot setting often leads to noisy sharing between two sub-task and disturbs joint learning. To tackle this, we guide slot with explicit intent information and propose a novel trust gating mechanism that blocks low-confidence intent information to ensure high quality sharing. Besides, we introduce a Reptile-based meta-learning strategy to achieve better generalization in unseen few-shot domains. In the experiments, the proposed method brings significant improvements on two datasets and achieve new state-of-the-art performance.",
+    "output": "FewJoint is a new FSL benchmark for joint dialogue understanding. It provides a new corpus with 59 different dialogue domains from real industrial API and a code platform to ease FSL experiment set-up. The corpus is expected to advance the research of this field. The proposed method brings significant improvements on two datasets and achieve new state-of-the-art performance.",
+    "generator": "qwen2.5-0.5b-base",
+    "dataset": "alpaca_eval"
+  },
+  {
+    "id": "alpaca-eval-42-0001",
+    "instruction": "Is there a meaning for Christmas wreaths?",
+    "output": "Yes, there is a meaning for Christmas wreaths. They are often associated with the season of Christmas and are often used to decorate homes and homes as a way to celebrate the holiday. They are also often used to represent the idea of giving and sharing, as well as the idea of unity and community.",
+    "generator": "qwen2.5-0.5b-base",
+    "dataset": "alpaca_eval"
+  },
+  {
+    "id": "alpaca-eval-42-0002",
+    "instruction": "What are some species of bears that are now extinct?",
+    "output": "There are several species of bears that are now extinct. Some of the most well-known extinct species include the North American black bear, the California black bear, the polar bear, and the brown bear. These species were once abundant in the wild, but due to human activities such as hunting, habitat loss, and climate change, they have become endangered or extinct.",
+    "generator": "qwen2.5-0.5b-base",
+    "dataset": "alpaca_eval"
+  },
+  {
+    "id": "alpaca-eval-42-0003",
+    "instruction": "Why might someone prefer to shop at a small, locally-owned business instead of a large chain store, even if the prices are higher?",
+    "output": "Local small businesses often have a more personalized and local experience, as they are closer to the customers and can offer a more personalized service. Additionally, small businesses may have a smaller inventory and can offer a wider range of products, which can be more affordable. However, the prices may be higher due to the cost of operating a small business, such as rent, utilities, and employee salaries.",
+    "generator": "qwen2.5-0.5b-base",
+    "dataset": "alpaca_eval"
+  },
+  {
+    "id": "alpaca-eval-42-0004",
+    "instruction": "I have competencies in remote sensing, machine learning, and water resource knowledge, what are the possible jobs I can occupy? What are the possible projects I can do? What companies I can work at?",
+    "output": "I have the following competencies:\n\n1. Remote sensing: I can work with satellite imagery and data to analyze and interpret environmental data.\n2. Machine learning: I can develop and train machine learning models to analyze and predict environmental trends.\n3. Water resource knowledge: I can work with water resources and analyze data to identify and address water quality issues.\n\nBased on my skills, I can work at various companies and industries, such as:\n\n1. Environmental consulting firms: I can work with clients to analyze and interpret environmental data, develop and train machine learning models, and provide water resource knowledge.\n2. Water resource management companies: I can work with clients to develop and train machine learning models to analyze and predict water quality issues, and provide water resource knowledge.\n3. Environmental research institutions: I can work with researchers to analyze and interpret environmental data, develop and train machine learning models, and provide water resource knowledge.\n4. Water resource management agencies: I can work with agencies to develop and train machine learning models to analyze and predict water quality issues, and provide water resource knowledge.\n5. Environmental consulting firms: I can work with clients to analyze and interpret environmental data, develop and train machine learning models, and provide water resource knowledge.\n6. Water resource management companies: I can work with clients to develop and train machine learning models to analyze and predict water quality issues, and provide water resource knowledge.\n7. Environmental research institutions: I can work with researchers to analyze and interpret environmental data, develop and train machine learning models, and provide water resource knowledge.\n8. Water resource management agencies: I can work with agencies to develop and train machine learning models to analyze and predict water quality issues, and provide water resource knowledge.\n9. Environmental consulting firms: I can work with clients to analyze and interpret environmental data, develop and train machine learning models, and provide water resource knowledge.\n10. Water resource management companies: I can work with clients to develop and train machine learning models to analyze and predict water quality issues, and provide water resource knowledge.\n11. Environmental research institutions: I can work with researchers to analyze and interpret environmental data, develop and train machine learning models, and provide water resource knowledge.\n12. Water resource management agencies: I can work with agencies to develop and train machine learning models to analyze and predict water quality issues, and provide water resource knowledge.\n13. Environmental consulting firms: I can work with clients to analyze and interpret environmental data, develop and train machine learning models, and provide water resource knowledge.\n14. Water resource management",
+    "generator": "qwen2.5-0.5b-base",
+    "dataset": "alpaca_eval"
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "config": {
+    "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    "data": "data/persona_lora/ramsay_style_preferences.json",
+    "out_dir": "outputs/lora_dpo_1ep",
+    "val_size": 20,
+    "seed": 42,
+    "r": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "beta": 0.1,
+    "lr": 5e-05,
+    "epochs": 1.0,
+    "batch_size": 4,
+    "grad_accum": 2,
+    "warmup_ratio": 0.1,
+    "max_length": 512
+  },
+  "trl_version": "0.29.1",
+  "trainable_params": 8683520,
+  "total_params": 370504640,
+  "before_training": {
+    "eval_loss": 0.6931473016738892
+  },
+  "after_training": {
+    "eval_loss": 0.482122004032135,
+    "eval_rewards/accuracies": 1.0,
+    "eval_rewards/margins": 0.48424072861671447,
+    "eval_rewards/chosen": 0.4312455117702484,
+    "eval_rewards/rejected": -0.0529952272772789
+  }
+}

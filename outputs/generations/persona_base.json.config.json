@@ -1,0 +1,11 @@
+{
+  "base_model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+  "adapter": null,
+  "eval_set": "eval_sets/persona_style_prompts.json",
+  "out": "outputs/generations/persona_base.json",
+  "generator": "smollm2-360m-instruct",
+  "batch_size": 8,
+  "max_new_tokens": 256,
+  "repetition_penalty": 1.1,
+  "do_sample": false
+}

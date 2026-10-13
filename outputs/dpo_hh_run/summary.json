@@ -1,0 +1,13 @@
+{
+  "total_steps": 469,
+  "best_val_reward_accuracy": 0.6470000147819519,
+  "final_val": {
+    "loss": 0.6298648118972778,
+    "reward_accuracy": 0.6470000147819519,
+    "reward_margin": 0.2655049264431,
+    "chosen_reward": -0.3194618821144104,
+    "rejected_reward": -0.5849667191505432
+  },
+  "skipped_steps": 3,
+  "train_minutes": 102.2
+}

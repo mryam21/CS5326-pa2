@@ -1,7 +1,5 @@
-"""Greedy generation on a fixed eval set. Reused for base, SFT, and DPO models.
-
-Writes results after every batch and skips ids already in --out, so it can resume.
-"""
+"""Greedy generation on a fixed eval set (base, SFT and DPO models). Saves after every batch
+and skips ids already in --out, so an interrupted run can be resumed."""
 
 import argparse
 import json
@@ -82,7 +80,7 @@ def main():
                 "generator": args.generator,
                 "dataset": row["dataset"],
             }
-            # Keep eval-set metadata (e.g. HH category / expected_behavior) for per-category analysis.
+            # keep HH category / expected_behavior for the per-category analysis
             record.update({k: row[k] for k in ("category", "expected_behavior") if k in row})
             results.append(record)
 

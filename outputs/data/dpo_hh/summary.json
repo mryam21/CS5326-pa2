@@ -1,0 +1,37 @@
+{
+  "config": {
+    "source": "hh",
+    "model": "Qwen/Qwen2.5-0.5B",
+    "n_train": 15000,
+    "n_val": 1000,
+    "seed": 42,
+    "max_length": 512,
+    "max_prompt_tokens": 256,
+    "out_dir": null
+  },
+  "dataset": "Anthropic/hh-rlhf",
+  "train": {
+    "source_split": "train",
+    "kept": 15000,
+    "seen": 49364,
+    "multi_turn": 34271,
+    "prompt_mismatch": 0,
+    "tied_scores": 0,
+    "empty_or_identical": 22,
+    "prompt_too_long": 71,
+    "chosen_truncated": 38,
+    "rejected_truncated": 22
+  },
+  "val": {
+    "source_split": "test",
+    "kept": 1000,
+    "seen": 3393,
+    "multi_turn": 2382,
+    "prompt_mismatch": 0,
+    "tied_scores": 0,
+    "empty_or_identical": 5,
+    "prompt_too_long": 6,
+    "chosen_truncated": 1,
+    "rejected_truncated": 1
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "config": {
+    "source": "uf",
+    "model": "Qwen/Qwen2.5-0.5B",
+    "n_train": 15000,
+    "n_val": 1000,
+    "seed": 42,
+    "max_length": 512,
+    "max_prompt_tokens": 256,
+    "out_dir": null
+  },
+  "dataset": "HuggingFaceH4/ultrafeedback_binarized",
+  "train": {
+    "source_split": "train_prefs",
+    "kept": 15000,
+    "seen": 21092,
+    "multi_turn": 0,
+    "prompt_mismatch": 0,
+    "tied_scores": 2512,
+    "empty_or_identical": 137,
+    "prompt_too_long": 3443,
+    "chosen_truncated": 3987,
+    "rejected_truncated": 2786
+  },
+  "val": {
+    "source_split": "test_prefs",
+    "kept": 1000,
+    "seen": 1400,
+    "multi_turn": 0,
+    "prompt_mismatch": 0,
+    "tied_scores": 199,
+    "empty_or_identical": 10,
+    "prompt_too_long": 191,
+    "chosen_truncated": 282,
+    "rejected_truncated": 170
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "n_pairs": 300,
+  "candidate": "sft",
+  "baseline": "base",
+  "judge_model": "google/gemini-3.6-flash",
+  "criteria": {
+    "overall": {
+      "candidate_wins": 124,
+      "baseline_wins": 149,
+      "ties": 27,
+      "unknown": 0,
+      "win_rate_excl_ties": 0.4542,
+      "win_rate_ties_as_half": 0.4583,
+      "failures": 0,
+      "position_A_chosen_rate": 0.5458
+    }
+  },
+  "retry_attempts_total": 5
+}

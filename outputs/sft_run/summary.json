@@ -1,0 +1,7 @@
+{
+  "total_steps": 938,
+  "best_val_loss": 1.3869459844914216,
+  "final_val_loss": 1.3869459844914216,
+  "skipped_steps": 0,
+  "train_minutes": 90.3
+}

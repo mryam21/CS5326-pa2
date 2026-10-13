@@ -1,0 +1,22 @@
+The tokenizer you are loading from '/kaggle/input/notebooks/mariyamliaqat/pa2-dpo-hh/cs5326-pa2/outputs/dpo_hh_run/best' with an incorrect regex pattern: https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503/discussions/84#69121093e8b480e709447d5e. This will lead to incorrect tokenization. You should set the `fix_mistral_regex=True` flag when loading this tokenizer to fix this issue.
+`torch_dtype` is deprecated! Use `dtype` instead!
+0 already done, 300 to generate
+16/300 saved
+32/300 saved
+48/300 saved
+64/300 saved
+80/300 saved
+96/300 saved
+112/300 saved
+128/300 saved
+144/300 saved
+160/300 saved
+176/300 saved
+192/300 saved
+208/300 saved
+224/300 saved
+240/300 saved
+256/300 saved
+272/300 saved
+288/300 saved
+300/300 saved

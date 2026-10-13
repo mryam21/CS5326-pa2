@@ -1,4 +1,4 @@
-"""Small training helpers shared by the SFT and DPO loops (pure PyTorch, no HF Trainer)."""
+"""Helpers shared by the SFT and DPO training loops."""
 
 from __future__ import annotations
 
@@ -31,11 +31,7 @@ def read_jsonl(path, limit=None):
 
 
 def build_adamw(model, lr, weight_decay):
-    """AdamW with weight decay on weight matrices only.
-
-    Biases and normalization weights (1-D tensors) are not decayed: shrinking them
-    toward zero doesn't regularize anything useful and can hurt training.
-    """
+    """AdamW with weight decay on weight matrices only (no decay on biases / norm weights)."""
     decay, no_decay = [], []
     for name, param in model.named_parameters():
         if not param.requires_grad:
@@ -49,7 +45,7 @@ def build_adamw(model, lr, weight_decay):
 
 
 def warmup_cosine_scheduler(optimizer, total_steps, warmup_ratio):
-    """Linear warmup from 0 to the peak LR, then cosine decay down to 0."""
+    """Linear warmup, then cosine decay to 0."""
     warmup_steps = max(1, math.ceil(total_steps * warmup_ratio))
 
     def lr_factor(step):
@@ -62,7 +58,7 @@ def warmup_cosine_scheduler(optimizer, total_steps, warmup_ratio):
 
 
 class MetricsLogger:
-    """Appends one JSON line per event, so partial progress survives a disconnect (manual 5.5)."""
+    """Appends one JSON line per event so a crashed run still leaves its logs."""
 
     def __init__(self, path):
         self.path = Path(path)

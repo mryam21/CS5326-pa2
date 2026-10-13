@@ -1,11 +1,5 @@
-"""Build the single-turn SFT train/validation sets from UltraChat (manual Section 6.2).
-
-Each UltraChat conversation is cut down to its FIRST user turn and FIRST assistant reply,
-so every example is one instruction -> one response.
-
-Train comes from the `train_sft` split, validation from the separate `test_sft` split,
-so no validation example can also appear in training.
-"""
+"""Single-turn SFT data from UltraChat: the first user turn and first assistant reply of each
+conversation. Train comes from `train_sft`, validation from `test_sft`."""
 
 import argparse
 import json
@@ -18,7 +12,7 @@ from prompt_format import format_prompt
 
 
 def first_turn_pair(messages):
-    """Return (instruction, response) from the first user/assistant exchange, or None."""
+    """(instruction, response) from the first user/assistant exchange, or None."""
     if len(messages) < 2:
         return None
     user, assistant = messages[0], messages[1]
@@ -32,7 +26,7 @@ def first_turn_pair(messages):
 
 
 def extract_examples(rows, tokenizer, n, max_prompt_tokens, max_length, id_prefix):
-    """Walk the (already shuffled) rows and keep the first n usable single-turn examples."""
+    """Keep the first n usable examples from the shuffled rows."""
     kept, stats = [], {"seen": 0, "bad_turns": 0, "prompt_too_long": 0, "will_be_truncated": 0}
 
     for row in rows:
@@ -46,15 +40,13 @@ def extract_examples(rows, tokenizer, n, max_prompt_tokens, max_length, id_prefi
             continue
         instruction, response = pair
 
-        # Drop examples whose prompt alone eats most of the context window:
-        # they would leave few or no response tokens to train on.
+        # skip prompts that leave too little room for the response
         prompt_len = len(tokenizer.encode(format_prompt(instruction), add_special_tokens=False))
         if prompt_len > max_prompt_tokens:
             stats["prompt_too_long"] += 1
             continue
 
-        # Not dropped, just counted: these get cut at max_length during batching,
-        # which also cuts off the EOS token (worth reporting).
+        # kept, but counted: these get truncated (and lose their EOS) at max_length
         response_len = len(tokenizer.encode(response, add_special_tokens=False))
         if prompt_len + response_len + 1 > max_length:
             stats["will_be_truncated"] += 1

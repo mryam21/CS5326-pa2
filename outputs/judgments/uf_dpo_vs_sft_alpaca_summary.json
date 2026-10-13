@@ -1,0 +1,19 @@
+{
+  "n_pairs": 300,
+  "candidate": "dpo_uf",
+  "baseline": "sft",
+  "judge_model": "google/gemini-3.6-flash",
+  "criteria": {
+    "overall": {
+      "candidate_wins": 126,
+      "baseline_wins": 127,
+      "ties": 47,
+      "unknown": 0,
+      "win_rate_excl_ties": 0.498,
+      "win_rate_ties_as_half": 0.4983,
+      "failures": 0,
+      "position_A_chosen_rate": 0.5889
+    }
+  },
+  "retry_attempts_total": 10
+}

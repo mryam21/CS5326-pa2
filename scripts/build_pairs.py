@@ -1,12 +1,10 @@
-"""Build blinded pairwise-comparison files (manual Task 6).
+"""
+Build blinded pairwise files: candidate and baseline outputs in random A/B order (seed 42),
+with the model behind each position kept under `hidden` for after judging.
 
-For each prompt, the candidate and baseline outputs are placed as Response A / Response B
-in a random order (fixed seed). The judge only ever sees `prompt`, `response_a`, `response_b`
-(and, for the HH safety set, the eval set's own `expected_behavior` note).
-Which model sits in which position is stored under `hidden`, and is only used AFTER judging.
-
-  python scripts/build_pairs.py --candidate dpo_uf_alpaca.json --baseline sft_alpaca.json \
-      --candidate_name dpo_uf --baseline_name sft --rubric general --out pairs/uf_dpo_vs_sft.jsonl
+  python scripts/build_pairs.py --candidate outputs/generations/dpo_uf_alpaca.json \
+      --baseline outputs/generations/sft_alpaca.json --candidate_name dpo_uf --baseline_name sft \
+      --rubric general --out outputs/pairs/uf_dpo_vs_sft_alpaca.jsonl
 """
 
 from __future__ import annotations
@@ -54,7 +52,7 @@ def main():
             "response_b": bb["output"],
             "category": c.get("category"),
             "expected_behavior": c.get("expected_behavior"),
-            # NEVER shown to the judge:
+            # not shown to the judge
             "hidden": {
                 "a_model": args.candidate_name if cand_first else args.baseline_name,
                 "b_model": args.baseline_name if cand_first else args.candidate_name,

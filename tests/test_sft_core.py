@@ -1,8 +1,4 @@
-"""Edge-case checks for alignment/sft.py beyond the public smoke tests.
-
-The manual (4.2) says the private grader also probes truncation boundaries,
-unusual tokenizer configurations, mixed sequence lengths, and row ordering.
-"""
+"""Extra tests for alignment/sft.py: truncation, unusual tokenizers, padding and row order."""
 
 from __future__ import annotations
 

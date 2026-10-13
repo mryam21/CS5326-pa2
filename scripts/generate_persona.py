@@ -1,12 +1,11 @@
-"""Generate persona-eval outputs from SmolLM2-360M-Instruct, with or without the LoRA-DPO adapter.
+"""
+Persona-prompt generations from SmolLM2-360M-Instruct, with or without the LoRA adapter.
 
-SmolLM2-Instruct is a chat model, so prompts go through its own chat template
-(tokenizer.apply_chat_template), not the ### Instruction template used for Qwen.
-Decoding matches the rest of the project: greedy + repetition_penalty 1.1.
+Uses the model's own chat template; greedy decoding with repetition_penalty 1.1.
 
-  python scripts/generate_persona.py --generator smollm2-360m-instruct --out .../persona_base.json
+  python scripts/generate_persona.py --generator smollm2-360m-instruct --out outputs/generations/persona_base.json
   python scripts/generate_persona.py --adapter outputs/lora_dpo_run/adapter \
-      --generator smollm2-360m-lora-dpo --out .../persona_lora.json
+      --generator smollm2-360m-lora-dpo --out outputs/generations/persona_lora.json
 """
 
 from __future__ import annotations
@@ -41,7 +40,7 @@ def main():
     if args.adapter:
         from peft import PeftModel
         model = PeftModel.from_pretrained(model, args.adapter)
-        model = model.merge_and_unload()  # fold LoRA into the weights: same outputs, faster generation
+        model = model.merge_and_unload()
     model = model.to(device).eval()
 
     rows = json.loads(Path(args.eval_set).read_text(encoding="utf-8"))

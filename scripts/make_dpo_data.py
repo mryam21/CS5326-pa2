@@ -1,16 +1,11 @@
-"""Build single-turn DPO preference data (manual Sections 6.3 and 10).
+"""
+Single-turn DPO preference pairs.
 
-  --source hh  ->  Anthropic/hh-rlhf               (train / test splits)
-  --source uf  ->  HuggingFaceH4/ultrafeedback_binarized   (train_prefs / test_prefs)
+  --source hh   Anthropic/hh-rlhf (train / test)
+  --source uf   HuggingFaceH4/ultrafeedback_binarized (train_prefs / test_prefs)
 
-Every output row is {id, instruction, chosen, rejected}. Train and validation come from
-separate source splits, so no validation pair can also appear in training.
-
-Filters (all counted in summary.json):
-  * multi-turn conversations are dropped (manual 6.3: single-turn reference setup)
-  * empty responses and pairs where chosen == rejected are dropped
-  * UltraFeedback ties (equal scores) are dropped: there is no preference to learn
-  * prompts longer than 256 tokens after formatting are dropped (manual 10.4: max prompt 256)
+Drops multi-turn conversations, empty or identical pairs, UltraFeedback score ties and prompts
+over 256 tokens. All counts go to summary.json.
 """
 
 import argparse
@@ -31,7 +26,7 @@ HUMAN, ASSISTANT = "\n\nHuman:", "\n\nAssistant:"
 
 
 def split_hh_transcript(text):
-    """'\\n\\nHuman: q\\n\\nAssistant: a' -> (q, a), or None if not exactly one turn each."""
+    """(question, answer) from a single-turn HH transcript, or None."""
     if text.count(HUMAN) != 1 or text.count(ASSISTANT) != 1:
         return None
     before, answer = text.split(ASSISTANT)
@@ -87,7 +82,7 @@ def extract_pairs(rows, parse, tokenizer, n, max_prompt_tokens, max_length, id_p
             stats["prompt_too_long"] += 1
             continue
 
-        # Counted, not dropped: these lose their tail (and EOS) at max_length during batching.
+        # kept, but counted: truncated (and lose their EOS) at max_length
         for side, text in (("chosen", chosen), ("rejected", rejected)):
             if prompt_len + len(tokenizer.encode(text, add_special_tokens=False)) + 1 > max_length:
                 stats[f"{side}_truncated"] += 1

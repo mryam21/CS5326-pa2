@@ -1,0 +1,21 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B",
+  "train_file": "outputs/data/sft/train.jsonl",
+  "val_file": "outputs/data/sft/val.jsonl",
+  "run_dir": "outputs/sft_run",
+  "max_length": 512,
+  "batch_size": 2,
+  "grad_accum": 16,
+  "lr": 2e-05,
+  "warmup_ratio": 0.03,
+  "weight_decay": 0.1,
+  "max_grad_norm": 1.0,
+  "epochs": 1,
+  "eval_every": 100,
+  "log_every": 10,
+  "eval_batch_size": 8,
+  "seed": 42,
+  "max_train_examples": null,
+  "max_val_examples": null,
+  "gradient_checkpointing": false
+}

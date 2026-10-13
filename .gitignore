@@ -1,3 +1,23 @@
 __pycache__/
 *.py[cod]
-outputs/
+*.egg-info/
+.DS_Store
+
+# Model weights and the large regenerable training data stay on Kaggle (see README)
+outputs/**/best/
+outputs/**/final/
+outputs/**/*.safetensors
+outputs/**/*.bin
+outputs/**/*.pt
+outputs/data/**/*.jsonl
+outputs/sanity/
+
+# LaTeX build files
+report/*.aux
+report/*.log
+report/*.out
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz
+!outputs/lora_dpo_run/adapter/adapter_model.safetensors
+!outputs/lora_dpo_1ep/adapter/adapter_model.safetensors

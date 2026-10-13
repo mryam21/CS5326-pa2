@@ -1,8 +1,8 @@
-"""Single prompt template shared by baseline generation, SFT, DPO, and evaluation."""
+"""Prompt template used everywhere (baseline, SFT, DPO, evaluation)."""
 
 PROMPT_TEMPLATE = "### Instruction:\n{instruction}\n\n### Response:\n"
 
-# The base model tends to keep going and invent a new turn; we stop there.
+# models sometimes start a new fake turn after answering; cut generation there
 STOP_STRING = "\n### Instruction:"
 
 

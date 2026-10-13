@@ -1,20 +1,12 @@
-"""Pairwise LLM-as-judge evaluation through kaggle_benchmarks (manual Task 7).
+"""
+Blind pairwise judging of saved pair files through kaggle_benchmarks.
 
-Reliability rules from manual Section 13.2, and where they live:
-  1. read saved pairwise JSONL ............ read_jsonl(args.pairs_path)
-  2. small batches (5 pairs / request) .... --batch_size
-  3. checkpoint after each batch .......... append_jsonl(...) inside the batch loop
-  4. sleep >= 5 s between attempts ........ time.sleep(args.sleep_seconds) after every attempt
-  5. retry failed batches (3 attempts) .... --max_retries
-  6. log unresolved failures .............. <output>_failures.jsonl
-  7. resume from existing judgments ....... --reuse_judgments
-  8. summarize win/loss/tie/unknown/fail .. summarize() -> <output>_summary.json
+Judges 5 pairs per request, saves after every batch, waits at least 5 s between requests,
+retries a failed batch up to 3 times, logs unresolved pairs to <output>_failures.jsonl and can
+resume with --reuse_judgments. The judge only sees "Response A" / "Response B"; the model names
+in each pair's `hidden` field are mapped back after parsing. Writes <output>_summary.json.
 
-Blinding: the judge sees only the prompt and "Response A" / "Response B". Model identities stay
-in each pair's `hidden` field and are mapped back only after a verdict is parsed.
-
-Run inside a Kaggle *benchmark* notebook (kaggle_benchmarks preinstalled, model proxy enabled).
-`--dry_run` swaps in a fake judge to test the pipeline without spending any judge calls.
+Needs a Kaggle benchmark notebook. --dry_run uses a fake judge to test the pipeline offline.
 """
 
 from __future__ import annotations
@@ -75,7 +67,7 @@ def build_prompt(batch, rubric):
 
 
 def parse_verdicts(text, batch, rubric):
-    """Return {pair_id: {criterion: 'A'|'B'|'tie', 'reason': str}} for valid verdicts only."""
+    """Valid verdicts as {pair_id: {criterion: 'A' | 'B' | 'tie', 'reason': ...}}."""
     text = text.strip()
     text = re.sub(r"^```(?:json)?|```$", "", text, flags=re.MULTILINE).strip()
     start, end = text.find("{"), text.rfind("}")
@@ -107,7 +99,7 @@ def to_model(position, hidden):
 
 
 class FakeJudge:
-    """Dry-run stand-in: random verdicts, plus occasional garbage to exercise retries."""
+    """Random verdicts plus some unparseable replies, for testing retries without the real judge."""
 
     def __init__(self, seed=0, fail_rate=0.3):
         self.rng, self.fail_rate = random.Random(seed), fail_rate
@@ -137,8 +129,7 @@ def call_judge(judge, prompt_text, chat_name, dry_run):
     if dry_run:
         return judge.prompt(prompt_text)
     import kaggle_benchmarks as kbench
-    # Fresh, isolated chat per request: kbench.prompt() otherwise appends to a shared conversation,
-    # which would leak earlier batches (and their verdicts) into later judge calls.
+    # new chat per request, otherwise earlier batches stay in the conversation history
     with kbench.chats.new(chat_name, orphan=True):
         return kbench_prompt(judge, prompt_text)
 
@@ -204,7 +195,7 @@ def main():
     args = p.parse_args()
 
     if args.sleep_seconds < 5 and not args.dry_run:
-        raise SystemExit("manual 13.2: sleep at least 5 seconds between judge requests")
+        raise SystemExit("--sleep_seconds must be at least 5")
 
     pairs = read_jsonl(args.pairs_path)[: args.limit]
     rubric = pairs[0]["rubric"]
@@ -232,7 +223,7 @@ def main():
                 text = call_judge(judge, prompt_text, f"judge-{out.stem}-{b}-{attempt}", args.dry_run)
                 verdicts.update(parse_verdicts(str(text), batch, rubric))
                 last_error = None if len(verdicts) == len(batch) else f"{len(batch) - len(verdicts)} missing/invalid verdicts"
-            except Exception as exc:  # network errors, proxy denials, unparseable output
+            except Exception as exc:  # proxy/network errors or unparseable output
                 last_error = f"{type(exc).__name__}: {exc}"[:500]
             time.sleep(sleep)
             if last_error is None:
@@ -252,7 +243,7 @@ def main():
                 "result": {c: to_model(v[c], row["hidden"]) for c in crits},
                 "reason": v["reason"], "judge_model": judge_name, "attempts": attempts,
             })
-        append_jsonl(out, judged_rows)          # checkpoint after every batch
+        append_jsonl(out, judged_rows)
         if failed_rows:
             append_jsonl(fail_path, failed_rows)
         total = len(done) + b + len(batch)

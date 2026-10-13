@@ -1,13 +1,8 @@
-"""From-scratch DPO training (manual Task 4). Same script for the HH-RLHF and UltraFeedback runs.
+"""
+DPO from the SFT checkpoint, used for both the HH-RLHF and UltraFeedback runs.
 
-Checklist from manual Section 10.1 / 10.3, and where each item lives:
-  1. SFT model as trainable policy ........ `policy` (fp32 weights, cuda:0)
-  2. frozen SFT copy as reference ......... `reference` (cuda:1, eval mode, requires_grad False)
-  3. response-only chosen/rejected logps .. alignment.dpo.policy_and_reference_logps
-  4. DPO loss ............................. alignment.dpo.dpo_loss_from_logps
-  5. val DPO loss / reward acc / margin ... evaluate()
-  6. best checkpoint by val reward acc .... save_checkpoint(... "best") when accuracy improves
-  Recipe: beta 0.1, fixed lr 1e-6, 1 pair per micro-batch x 32 accumulation, clip 1.0, 1 epoch.
+The policy trains on cuda:0 and a frozen copy of the same checkpoint serves as the reference
+on cuda:1. The best checkpoint is picked by validation reward accuracy.
 """
 
 from __future__ import annotations
@@ -29,11 +24,10 @@ from prompt_format import format_prompt
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--sft_checkpoint", required=True, help="SFT best checkpoint (policy init AND reference)")
+    p.add_argument("--sft_checkpoint", required=True, help="SFT checkpoint, used for both the policy and the reference")
     p.add_argument("--train_file", required=True)
     p.add_argument("--val_file", required=True)
     p.add_argument("--run_dir", required=True)
-    # Defaults = manual Section 10.3 / 10.4
     p.add_argument("--beta", type=float, default=0.1)
     p.add_argument("--lr", type=float, default=1e-6)
     p.add_argument("--optimizer", choices=["adamw", "rmsprop"], default="adamw")
@@ -44,12 +38,10 @@ def parse_args():
     p.add_argument("--epochs", type=int, default=1)
     p.add_argument("--reference_dtype", choices=["fp32", "fp16"], default="fp32",
                    help="fp32 makes policy and reference numerically identical at step 0")
-    # Bookkeeping
     p.add_argument("--eval_every", type=int, default=50)
     p.add_argument("--log_every", type=int, default=10)
     p.add_argument("--eval_batch_size", type=int, default=4)
     p.add_argument("--seed", type=int, default=42)
-    # Pilot runs / memory
     p.add_argument("--max_train_examples", type=int, default=None)
     p.add_argument("--max_val_examples", type=int, default=None)
     p.add_argument("--gradient_checkpointing", action="store_true")
@@ -68,7 +60,7 @@ def make_loader(rows, tokenizer, max_length, batch_size, shuffle, seed):
 
 
 def summarize(per_pair):
-    """Average per-pair tensors collected over many batches."""
+    """Average the per-pair values collected over several batches."""
     cat = {k: torch.cat(v) for k, v in per_pair.items()}
     return {
         "loss": cat["loss"].mean().item(),
@@ -80,7 +72,7 @@ def summarize(per_pair):
 
 
 def collect(store, logps, beta):
-    """Per-pair loss + reward metrics for one batch, appended to `store`."""
+    """Add this batch's per-pair loss and reward metrics to `store`."""
     with torch.no_grad():
         per_pair_loss = torch.stack([
             dpo_loss_from_logps(*(t[i:i + 1] for t in logps), beta) for i in range(len(logps[0]))
@@ -123,7 +115,7 @@ def main():
         policy.gradient_checkpointing_enable()
     policy.train()
 
-    # The reference is a separate, frozen copy of the SAME SFT checkpoint.
+    # reference: frozen copy of the same SFT checkpoint
     reference = AutoModelForCausalLM.from_pretrained(args.sft_checkpoint, dtype=reference_dtype).to(reference_device)
     reference.config.use_cache = False
     reference.eval()
@@ -140,7 +132,7 @@ def main():
         optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=0.0)
     else:
         optimizer = torch.optim.RMSprop(params, lr=args.lr)
-    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)  # fixed LR: no scheduler (manual 10.4)
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)  # fixed LR, so no scheduler
 
     print(
         f"train={len(train_rows)} val={len(val_rows)} | effective batch={args.batch_size * args.grad_accum} "

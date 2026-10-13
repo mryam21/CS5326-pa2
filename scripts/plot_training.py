@@ -1,15 +1,9 @@
-"""Training plots for the report (manual Section 14.4 / submission checklist item 3).
+"""
+Training plots from the metrics.jsonl files of train_sft.py and train_dpo.py.
 
-Reads the metrics.jsonl files written by train_sft.py and train_dpo.py and saves PNGs:
-
-  sft_training.png         SFT train vs validation loss
-  dpo_<name>_training.png  DPO loss, reward accuracy, reward margin, chosen/rejected rewards
-  dpo_comparison.png       validation reward accuracy and margin, all DPO runs together
-
-Usage:
-  python scripts/plot_training.py --sft path/to/sft_run/metrics.jsonl \
-      --dpo HH-RLHF=path/to/dpo_hh_run/metrics.jsonl --dpo UltraFeedback=path/to/dpo_uf_run/metrics.jsonl \
-      --out_dir report/figures
+  python scripts/plot_training.py --sft outputs/sft_run/metrics.jsonl \
+      --dpo hh=outputs/dpo_hh_run/metrics.jsonl --dpo uf=outputs/dpo_uf_run/metrics.jsonl \
+      --out_dir outputs/figures
 """
 
 from __future__ import annotations
@@ -23,7 +17,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-# Validated categorical palette (fixed order) + neutral inks.
 BLUE, ORANGE, AQUA, VIOLET = "#2a78d6", "#eb6834", "#1baf7a", "#6250d6"
 SURFACE, INK, INK_2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e1"
 
@@ -59,7 +52,7 @@ def plot_line(ax, x, y, color, label, marker=False, alpha=1.0, end_label=True):
 
 
 def mark_best(ax, x, y, mode, text):
-    """Ring the best validation point; annotate it unless it is the last point (the end label covers that)."""
+    """Circle the best validation point and label it."""
     if not x:
         return
     i = max(range(len(y)), key=lambda k: y[k]) if mode == "max" else min(range(len(y)), key=lambda k: y[k])

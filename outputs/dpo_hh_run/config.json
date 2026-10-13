@@ -1,0 +1,22 @@
+{
+  "sft_checkpoint": "/kaggle/input/notebooks/mariyamliaqat/pa2-sft/cs5326-pa2/outputs/sft_run/best",
+  "train_file": "outputs/data/dpo_hh/train.jsonl",
+  "val_file": "outputs/data/dpo_hh/val.jsonl",
+  "run_dir": "outputs/dpo_hh_run",
+  "beta": 0.1,
+  "lr": 1e-06,
+  "optimizer": "adamw",
+  "batch_size": 1,
+  "grad_accum": 32,
+  "max_length": 512,
+  "max_grad_norm": 1.0,
+  "epochs": 1,
+  "reference_dtype": "fp32",
+  "eval_every": 50,
+  "log_every": 10,
+  "eval_batch_size": 4,
+  "seed": 42,
+  "max_train_examples": null,
+  "max_val_examples": null,
+  "gradient_checkpointing": false
+}

@@ -1,27 +1,18 @@
-"""Core SFT math: batching with response-only labels, response log-probs, and the SFT loss.
-
-These functions are shared by SFT training, DPO (which scores chosen/rejected responses
-with the same log-prob code), and submission_adapter.py.
-"""
+"""SFT batching, response log-probs and loss. DPO reuses the same log-prob code."""
 
 from __future__ import annotations
 
 import torch
 
-IGNORE_INDEX = -100  # label value that the loss skips
+IGNORE_INDEX = -100
 
-
-# ---------------------------------------------------------------------------
-# Batching
-# ---------------------------------------------------------------------------
 
 def _encode(tokenizer, text):
-    """Plain token ids for `text`, with no BOS/EOS added by the tokenizer."""
     return list(tokenizer.encode(text, add_special_tokens=False))
 
 
 def _pad_id(tokenizer):
-    """Padding id to fill empty slots. Its value never matters: padded slots are masked."""
+    # value doesn't matter, padded positions are masked out
     pad_id = getattr(tokenizer, "pad_token_id", None)
     if pad_id is None:
         pad_id = getattr(tokenizer, "eos_token_id", None)
@@ -29,22 +20,11 @@ def _pad_id(tokenizer):
 
 
 def build_lm_batch(tokenizer, prompts, responses, max_length, pad_to_max_length=True):
-    """Tokenize prompt+response pairs into one right-padded LM batch.
+    """Right-padded batch where only response tokens (+ EOS) have labels.
 
-    Per row:
-        input_ids = prompt_ids + response_ids + [eos]      (then cut to max_length)
-        labels    = [-100] * len(prompt_ids) + response_ids + [eos]   (same cut)
-
-    The prompt and response are tokenized SEPARATELY and then joined, so we know
-    exactly where the response starts. Tokenizing the joined string could merge
-    tokens across the boundary and shift the mask.
-
-    The EOS is appended BEFORE truncation (manual 4.1), so a response that is cut
-    at max_length loses its EOS.
-
-    Padding: labels are -100 and attention_mask is 0 on padded slots. The mask is
-    built from the real lengths, never by comparing ids to pad_token_id, because
-    for Qwen the pad token and the EOS token are the same id.
+    Prompt and response are tokenized separately so the response boundary is exact.
+    EOS is added before truncating to max_length, so a cut-off response has no EOS.
+    The attention mask comes from the real lengths (Qwen's pad id equals its EOS id).
     """
     if len(prompts) != len(responses):
         raise ValueError("prompts and responses must have the same length")
@@ -84,32 +64,23 @@ def build_lm_batch(tokenizer, prompts, responses, max_length, pad_to_max_length=
     }
 
 
-# ---------------------------------------------------------------------------
-# Log-probabilities and loss
-# ---------------------------------------------------------------------------
-
 def response_logprobs_from_batch(model, batch):
-    """Summed response-token log-probs per row, plus the response-token count per row.
-
-    A causal LM's logits at position t predict the token at position t+1, so we
-    compare logits[:, :-1] with labels[:, 1:] (the "shift").
-    """
+    """Per-row sum of response-token log-probs, and the number of response tokens."""
     device = next(model.parameters()).device
     input_ids = batch["input_ids"].to(device)
     attention_mask = batch["attention_mask"].to(device)
     labels = batch["labels"].to(device)
 
     logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
-    logits = logits[:, :-1, :].float()        # fp32 for a stable softmax, even under fp16 autocast
+    # position t predicts token t+1; upcast to fp32 for a stable logsumexp
+    logits = logits[:, :-1, :].float()
     targets = labels[:, 1:]
     mask = targets.ne(IGNORE_INDEX)
 
-    # gather() cannot index with -100, so point masked slots at token 0;
-    # their values are zeroed out by the mask afterwards.
+    # -100 can't be used as an index; masked positions are zeroed below anyway
     safe_targets = targets.masked_fill(~mask, 0)
 
-    # log p(target) = logit(target) - logsumexp(all logits)
-    # Same as log_softmax + gather, without building a full [B, T, vocab] log-prob tensor.
+    # log p = logit - logsumexp, avoids materializing a full log_softmax tensor
     target_logits = logits.gather(-1, safe_targets.unsqueeze(-1)).squeeze(-1)
     token_logps = target_logits - torch.logsumexp(logits, dim=-1)
 
@@ -118,18 +89,10 @@ def response_logprobs_from_batch(model, batch):
 
 
 def sft_loss_from_batch(model, batch):
-    """Response-only SFT loss, averaged over all response tokens in the batch.
-
-    Reduction choice (manual 4.1 allows two; we use this one everywhere):
-        loss = -(sum of response-token log-probs) / (number of response tokens)
-    """
+    """Mean negative log-likelihood over all response tokens in the batch (token-mean)."""
     summed_logps, token_counts = response_logprobs_from_batch(model, batch)
     return -summed_logps.sum() / token_counts.sum().clamp_min(1)
 
-
-# ---------------------------------------------------------------------------
-# Convenience wrappers taking raw strings (used by submission_adapter.py)
-# ---------------------------------------------------------------------------
 
 def compute_response_logprobs(model, tokenizer, prompts, responses, max_length):
     batch = build_lm_batch(tokenizer, prompts, responses, max_length)
