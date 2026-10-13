@@ -124,7 +124,7 @@ Eval decoding & \multicolumn{3}{>{\raggedright\arraybackslash\hsize=\dimexpr3\hs
 
 DPO minimizes
 \[\mathcal{L}_{\text{DPO}}=-\log\sigma\Big(\beta\big[(\log\pi_\theta(y_w|x)-\log\pi_{\text{ref}}(y_w|x))-(\log\pi_\theta(y_l|x)-\log\pi_{\text{ref}}(y_l|x))\big]\Big),\]
-where each $\log\pi(y|x)$ is the sum over response tokens only; prompt and padding positions are masked with $-100$. We validate every 50 steps on all 1,000 held-out pairs and log loss, reward accuracy ($r_w>r_l$, strict), margin $\mathbb{E}[r_w-r_l]$, and the mean chosen and rejected rewards $r=\beta(\log\pi_\theta-\log\pi_{\text{ref}})$.
+where each $\log\pi(y|x)$ is the sum over response tokens only; prompt and padding positions are masked with $-100$. For SFT we use the \emph{token-mean} reduction everywhere (training, validation and \code{compute\_sft\_loss}): the summed negative log-likelihood of all response tokens in the batch divided by their count. We validate every 50 steps on all 1,000 held-out pairs and log loss, reward accuracy ($r_w>r_l$, strict), margin $\mathbb{E}[r_w-r_l]$, and the mean chosen and rejected rewards $r=\beta(\log\pi_\theta-\log\pi_{\text{ref}})$.
 
 % =====================================================================
 \section{Parameter Choices and Deviations}
@@ -154,6 +154,8 @@ DPO optimizer & RMSprop or AdamW & AdamW, wd 0 & Weight decay would pull the pol
 \end{tabularx}
 \end{table}
 We kept $\beta$, the DPO learning rate, the batch sizes, the epoch counts and the checkpoint rule exactly as in the guide. We had no evidence to justify changing them, and changing them would have made the two DPO tracks harder to compare.
+
+\textbf{LoRA configuration (Task 5).} \emph{Rank and alpha:} $r{=}16$, $\alpha{=}32$ (scale $\alpha/r{=}2$) gives 8.7M trainable parameters (2.3\%), enough capacity for a change of style learned from only 200 pairs while the base weights stay frozen. \emph{Target modules:} all seven linear projections (\code{q,k,v,o} and the MLP \code{gate,up,down}) rather than attention only, because the persona is mostly a matter of word choice, which the MLP layers shape as much as attention does. \emph{Learning rate:} $5{\times}10^{-5}$ with 10\% warmup and cosine decay; LoRA weights start at zero and need a much larger step than full fine-tuning ($10^{-6}$ in Task 4), so we used a value at the conservative end for LoRA-DPO. \emph{Batch size:} $4\times2=8$ pairs per step gives 25 optimizer steps per epoch on 200 pairs; a larger batch would leave too few updates. \emph{Epochs:} 3, chosen over 1 by the ablation in Table~\ref{tab:dev}. Dropout 0.05 is light regularization for the small dataset.
 
 % =====================================================================
 \section{Training Behavior}
@@ -185,7 +187,7 @@ We kept $\beta$, the DPO learning rate, the batch sizes, the epoch counts and th
 % =====================================================================
 \section{DPO-versus-SFT Results}
 
-\textbf{Protocol.} The judge is \code{google/gemini-3.6-flash} via \code{kaggle\_benchmarks}, at temperature 0, run from a saved Kaggle benchmark notebook (\code{pa2-judge}) on the saved pairwise JSONL files only. Each request covers 5 pairs. We checkpoint after every batch, sleep $\ge$5 s between attempts, retry up to 3 attempts per batch, log failures to \code{*\_failures.jsonl}, and resume with \code{-{}-reuse\_judgments}. Each pair's A/B order is randomized (seed 42), so the candidate is A in 151/300 and 13/24 pairs. The judge sees only ``Response A'' and ``Response B''; model identities are mapped back only after a verdict is parsed. A batch counts as invalid if any item's JSON is missing or malformed, and the whole batch is then retried. Anything still unresolved would have been counted as \emph{unknown}.
+\textbf{Protocol.} Before full generation we ran a sanity check on 3 HH prompts per checkpoint to confirm paths, tokenizer, prompt format, EOS stopping and output length. The judge is \code{google/gemini-3.6-flash} via \code{kaggle\_benchmarks}, at temperature 0, run from a saved Kaggle benchmark notebook (\code{pa2-judge}) on the saved pairwise JSONL files only. Each request covers 5 pairs. We checkpoint after every batch, sleep $\ge$5 s between attempts, retry up to 3 attempts per batch, log failures to \code{*\_failures.jsonl}, and resume with \code{-{}-reuse\_judgments}. Each pair's A/B order is randomized (seed 42), so the candidate is A in 151/300 and 13/24 pairs. The judge sees only ``Response A'' and ``Response B''; model identities are mapped back only after a verdict is parsed. A batch counts as invalid if any item's JSON is missing or malformed, and the whole batch is then retried. Anything still unresolved would have been counted as \emph{unknown}.
 
 \begin{table}[H]
 \centering\small
