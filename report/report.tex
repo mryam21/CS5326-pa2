@@ -54,7 +54,7 @@ Mariyam Liaqat \quad$\cdot$\quad LUMS \quad$\cdot$\quad October 2026\\[2pt]
 \vspace{-2pt}
 \noindent\fcolorbox{accent}{rowgray}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\small
 \textbf{Summary.}
-We fine-tuned \code{Qwen/Qwen2.5-0.5B} with our own SFT loop (30k UltraChat examples), then ran our own DPO loop from the SFT checkpoint on HH-RLHF and UltraFeedback (15k pairs each, $\beta{=}0.1$). Separately, we trained a LoRA persona adapter on \code{SmolLM2-360M-Instruct} with TRL's \code{DPOTrainer}. All comparisons were blind pairwise judgments by \code{google/gemini-3.6-flash}.
+I fine-tuned \code{Qwen/Qwen2.5-0.5B} with my own SFT loop (30k UltraChat examples), then ran my own DPO loop from the SFT checkpoint on HH-RLHF and UltraFeedback (15k pairs each, $\beta{=}0.1$). Separately, I trained a LoRA persona adapter on \code{SmolLM2-360M-Instruct} with TRL's \code{DPOTrainer}. All comparisons were blind pairwise judgments by \code{google/gemini-3.6-flash}.
 \textbf{HH-DPO beats SFT on the safety set} (158 wins / 98 losses / 44 ties, 61.7\% win rate excluding ties, sign test $p{=}0.0002$).
 \textbf{UF-DPO is level with SFT on AlpacaEval} (126/127/47, 49.8\%), even though its validation reward accuracy was 0.736.
 \textbf{The persona LoRA learned the style} (style 18/1/5) \textbf{at a small cost in helpfulness} (10/13/1).
@@ -63,17 +63,17 @@ We fine-tuned \code{Qwen/Qwen2.5-0.5B} with our own SFT loop (30k UltraChat exam
 % =====================================================================
 \section{Repository, Models, and Data}
 
-\textbf{Code.} The training loops are our own, in \code{alignment/sft.py}, \code{alignment/dpo.py}, \code{scripts/train\_sft.py} and \code{scripts/train\_dpo.py}. Neither uses HF \code{Trainer} or TRL. \code{submission\_adapter.py} connects all six adapter functions, and the public tests plus our 19 extra unit tests (\code{tests/}) pass. TRL+PEFT appear only in \code{scripts/train\_lora\_dpo.py}. Everything ran on Kaggle (2$\times$T4; PyTorch 2.11.0+cu128, Transformers 4.57.6, Datasets 4.8.5; TRL 0.29.1 and PEFT 0.21.2 for LoRA). There is one notebook per stage, and each stage's outputs are passed to the next as a notebook input: \code{AdvGenAI PA2} (setup, Task~2 baseline), \code{pa2-sft}$\to$\code{pa2-dpo-hh}/\code{pa2-dpo-uf}, \code{pa2-lora}, then \code{pa2-generate}$\to$\code{pa2-judge}.
+\textbf{Code.} The training loops are my own, in \code{alignment/sft.py}, \code{alignment/dpo.py}, \code{scripts/train\_sft.py} and \code{scripts/train\_dpo.py}. Neither uses HF \code{Trainer} or TRL. \code{submission\_adapter.py} connects all six adapter functions, and the public tests plus my 19 extra unit tests (\code{tests/}) pass. TRL+PEFT appear only in \code{scripts/train\_lora\_dpo.py}. Everything ran on Kaggle (2$\times$T4; PyTorch 2.11.0+cu128, Transformers 4.57.6, Datasets 4.8.5; TRL 0.29.1 and PEFT 0.21.2 for LoRA). There is one notebook per stage, and each stage's outputs are passed to the next as a notebook input: \code{AdvGenAI PA2} (setup, Task~2 baseline), \code{pa2-sft}$\to$\code{pa2-dpo-hh}/\code{pa2-dpo-uf}, \code{pa2-lora}, then \code{pa2-generate}$\to$\code{pa2-judge}.
 
 \textbf{Prompt format} (\code{prompt\_format.py}), shared by SFT, DPO and evaluation for the Qwen models:
 \begin{center}\vspace{-4pt}\code{"\#\#\# Instruction:\textbackslash n\{instruction\}\textbackslash n\textbackslash n\#\#\# Response:\textbackslash n"}\vspace{-4pt}\end{center}
-EOS is appended to every training response, and generation also stops at the string \code{"\textbackslash n\#\#\# Instruction:"}. The LoRA track uses SmolLM2's built-in chat template (\code{apply\_chat\_template}, \code{add\_generation\_prompt=True}); we pass no system message, so the template inserts its default SmolLM system prompt.
+EOS is appended to every training response, and generation also stops at the string \code{"\textbackslash n\#\#\# Instruction:"}. The LoRA track uses SmolLM2's built-in chat template (\code{apply\_chat\_template}, \code{add\_generation\_prompt=True}); I pass no system message, so the template inserts its default SmolLM system prompt.
 
-\textbf{Seeds.} We used seed 42 everywhere: subset sampling, \code{set\_seed} for training, the A/B shuffle in pairwise files, and the LoRA train/val split.
+\textbf{Seeds.} I used seed 42 everywhere: subset sampling, \code{set\_seed} for training, the A/B shuffle in pairwise files, and the LoRA train/val split.
 
 \begin{table}[H]
 \centering\small
-\caption{Data used per track. ``Dropped'' counts come from our filtering scripts; ``truncated'' means the response was cut at the 512-token context.}
+\caption{Data used per track. ``Dropped'' counts come from my filtering scripts; ``truncated'' means the response was cut at the 512-token context.}
 \label{tab:data}
 \begin{tabularx}{\linewidth}{@{}l R{4.6cm} c Y@{}}
 \toprule
@@ -90,7 +90,7 @@ LoRA-DPO & \code{data/persona\_lora/ramsay\_style\_preferences.json} & 200 / 20 
 \textbf{Fixed evaluation sets.}
 \code{eval\_sets/\allowbreak alpaca\_eval\_300\_seed42.json}: 300 of the 805 AlpacaEval prompts, \code{random.Random(42).sample}.
 \code{eval\_sets/\allowbreak hh\_rlhf\_eval\_300\_seed42.json}: the provided synthetic set, 10 categories $\times$ 30 prompts, each with an \code{expected\_behavior} note.
-\code{eval\_sets/\allowbreak persona\_style\_prompts.json}: 24 prompts we wrote, 6 each for cooking, coding, general help and safety-sensitive situations, checked against the training prompts so none overlap.
+\code{eval\_sets/\allowbreak persona\_style\_prompts.json}: 24 prompts I wrote, 6 each for cooking, coding, general help and safety-sensitive situations, checked against the training prompts so none overlap.
 
 % =====================================================================
 \section{Experimental Configuration}
@@ -124,7 +124,7 @@ Eval decoding & \multicolumn{3}{>{\raggedright\arraybackslash\hsize=\dimexpr3\hs
 
 DPO minimizes
 \[\mathcal{L}_{\text{DPO}}=-\log\sigma\Big(\beta\big[(\log\pi_\theta(y_w|x)-\log\pi_{\text{ref}}(y_w|x))-(\log\pi_\theta(y_l|x)-\log\pi_{\text{ref}}(y_l|x))\big]\Big),\]
-where each $\log\pi(y|x)$ is the sum over response tokens only; prompt and padding positions are masked with $-100$. For SFT we use the \emph{token-mean} reduction everywhere (training, validation and \code{compute\_sft\_loss}): the summed negative log-likelihood of all response tokens in the batch divided by their count. We validate every 50 steps on all 1,000 held-out pairs and log loss, reward accuracy ($r_w>r_l$, strict), margin $\mathbb{E}[r_w-r_l]$, and the mean chosen and rejected rewards $r=\beta(\log\pi_\theta-\log\pi_{\text{ref}})$.
+where each $\log\pi(y|x)$ is the sum over response tokens only; prompt and padding positions are masked with $-100$. For SFT I use the \emph{token-mean} reduction everywhere (training, validation and \code{compute\_sft\_loss}): the summed negative log-likelihood of all response tokens in the batch divided by their count. I validate every 50 steps on all 1,000 held-out pairs and log loss, reward accuracy ($r_w>r_l$, strict), margin $\mathbb{E}[r_w-r_l]$, and the mean chosen and rejected rewards $r=\beta(\log\pi_\theta-\log\pi_{\text{ref}})$.
 
 % =====================================================================
 \section{Parameter Choices and Deviations}
@@ -133,29 +133,29 @@ where each $\log\pi(y|x)$ is the sum over response tokens only; prompt and paddi
 
 \begin{table}[tbp]
 \centering\footnotesize
-\caption{Every change from the guide configuration, grouped by why we made it.}
+\caption{Every change from the guide configuration, grouped by why I made it.}
 \label{tab:dev}
 \begin{tabularx}{\linewidth}{@{}R{2.1cm} R{1.75cm} R{1.9cm} Y@{}}
 \toprule
-Setting & Guide & Ours & Reason and evidence $\to$ effect \\
+Setting & Guide & Used & Reason and evidence $\to$ effect \\
 \midrule
 \multicolumn{4}{@{}l}{\textit{Performance / quality-driven}}\\
-Decoding & greedy & greedy + rep.\ pen.\ 1.1 & At rep.\ pen.\ 1.0, 83/300 Task-2 base outputs ran to the 512-token cap in repetition loops. A 20-prompt SFT pilot looped in 7/20. Rep.\ pen.\ 1.1 reduced that to 1/20; \code{no\_repeat\_ngram\_size}=4 also gave 1/20 but invented content, so we rejected it. $\to$ We used the same setting for every model and \emph{regenerated} base outputs with it, so all judged pairs share one decoding policy. \\
-LoRA epochs & (student choice) & 3 & A 1-epoch ablation reached val reward accuracy 1.0 but a margin of only 0.48, and its outputs were judged style-identical to the base model (0/0/24, Table~\ref{tab:persona}). With 3 epochs the margin grew to 2.14 and the style was clearly learned. We kept 3 epochs and report the helpfulness cost. \\
+Decoding & greedy & greedy + rep.\ pen.\ 1.1 & At rep.\ pen.\ 1.0, 83/300 Task-2 base outputs ran to the 512-token cap in repetition loops. A 20-prompt SFT pilot looped in 7/20. Rep.\ pen.\ 1.1 reduced that to 1/20; \code{no\_repeat\_ngram\_size}=4 also gave 1/20 but invented content, so I rejected it. $\to$ I used the same setting for every model and \emph{regenerated} base outputs with it, so all judged pairs share one decoding policy. \\
+LoRA epochs & (student choice) & 3 & A 1-epoch ablation reached val reward accuracy 1.0 but a margin of only 0.48, and its outputs were judged style-identical to the base model (0/0/24, Table~\ref{tab:persona}). With 3 epochs the margin grew to 2.14 and the style was clearly learned. I kept 3 epochs and report the helpfulness cost. \\
 \midrule
 \multicolumn{4}{@{}l}{\textit{Correctness / reproducibility-driven}}\\
 Reference dtype & fp16 allowed & fp32 & With identical weights and dtype, step-0 validation gave exactly accuracy 0.000, margin 0.000 and loss $\ln 2=0.693$, as manual \S10.5 predicts. That is an end-to-end check of masking and log-probs. It costs nothing because the reference has its own GPU. \\
-Prompt length & 256 max & drop if $>$256 & We filter long prompts instead of truncating them, so no response is conditioned on a cut-off prompt. SFT used a 384 limit so every response keeps $\ge$128 tokens of budget. \\
-TRL version & latest & 0.29.1 & TRL 1.x calls a Triton fused log-prob kernel that failed in our environment, so we pinned TRL 0.29.1 (with PEFT 0.21.2), which uses the standard PyTorch path. This doesn't change the method. \\
+Prompt length & 256 max & drop if $>$256 & I filter long prompts instead of truncating them, so no response is conditioned on a cut-off prompt. SFT used a 384 limit so every response keeps $\ge$128 tokens of budget. \\
+TRL version & latest & 0.29.1 & TRL 1.x calls a Triton fused log-prob kernel that failed in my environment, so I pinned TRL 0.29.1 (with PEFT 0.21.2), which uses the standard PyTorch path. This doesn't change the method. \\
 \midrule
-\multicolumn{4}{@{}l}{\textit{Unspecified in the guide (our choice)}}\\
-DPO optimizer & RMSprop or AdamW & AdamW, wd 0 & Weight decay would pull the policy toward zero rather than toward the reference. The KL-style anchoring comes from $\pi_{\text{ref}}$, so we set wd to 0. \\
+\multicolumn{4}{@{}l}{\textit{Unspecified in the guide (my choice)}}\\
+DPO optimizer & RMSprop or AdamW & AdamW, wd 0 & Weight decay would pull the policy toward zero rather than toward the reference. The KL-style anchoring comes from $\pi_{\text{ref}}$, so I set wd to 0. \\
 \bottomrule
 \end{tabularx}
 \end{table}
-We kept $\beta$, the DPO learning rate, the batch sizes, the epoch counts and the checkpoint rule exactly as in the guide. We had no evidence to justify changing them, and changing them would have made the two DPO tracks harder to compare.
+I kept $\beta$, the DPO learning rate, the batch sizes, the epoch counts and the checkpoint rule exactly as in the guide. I had no evidence to justify changing them, and changing them would have made the two DPO tracks harder to compare.
 
-\textbf{LoRA configuration (Task 5).} \emph{Rank and alpha:} $r{=}16$, $\alpha{=}32$ (scale $\alpha/r{=}2$) gives 8.7M trainable parameters (2.3\%), enough capacity for a change of style learned from only 200 pairs while the base weights stay frozen. \emph{Target modules:} all seven linear projections (\code{q,k,v,o} and the MLP \code{gate,up,down}) rather than attention only, because the persona is mostly a matter of word choice, which the MLP layers shape as much as attention does. \emph{Learning rate:} $5{\times}10^{-5}$ with 10\% warmup and cosine decay; LoRA weights start at zero and need a much larger step than full fine-tuning ($10^{-6}$ in Task 4), so we used a value at the conservative end for LoRA-DPO. \emph{Batch size:} $4\times2=8$ pairs per step gives 25 optimizer steps per epoch on 200 pairs; a larger batch would leave too few updates. \emph{Epochs:} 3, chosen over 1 by the ablation in Table~\ref{tab:dev}. Dropout 0.05 is light regularization for the small dataset.
+\textbf{LoRA configuration (Task 5).} \emph{Rank and alpha:} $r{=}16$, $\alpha{=}32$ (scale $\alpha/r{=}2$) gives 8.7M trainable parameters (2.3\%), enough capacity for a change of style learned from only 200 pairs while the base weights stay frozen. \emph{Target modules:} all seven linear projections (\code{q,k,v,o} and the MLP \code{gate,up,down}) rather than attention only, because the persona is mostly a matter of word choice, which the MLP layers shape as much as attention does. \emph{Learning rate:} $5{\times}10^{-5}$ with 10\% warmup and cosine decay; LoRA weights start at zero and need a much larger step than full fine-tuning ($10^{-6}$ in Task 4), so I used a value at the conservative end for LoRA-DPO. \emph{Batch size:} $4\times2=8$ pairs per step gives 25 optimizer steps per epoch on 200 pairs; a larger batch would leave too few updates. \emph{Epochs:} 3, chosen over 1 by the ablation in Table~\ref{tab:dev}. Dropout 0.05 is light regularization for the small dataset.
 
 % =====================================================================
 \section{Training Behavior}
@@ -167,7 +167,7 @@ We kept $\beta$, the DPO learning rate, the batch sizes, the epoch counts and th
 \label{fig:sft}
 \end{figure}
 
-\textbf{SFT} (Fig.~\ref{fig:sft}). Validation loss first rises from 1.415 (step 0) to 1.441 (step 200), then falls steadily to 1.387 at the final step, which is also the best checkpoint. The early rise lines up with the end of warmup, when the LR reaches its peak (29 warmup steps). The model first unlearns its pre-training continuation habits, then fits the instruction format. Training loss is noisy ($\pm$0.05) because each logged point averages 10 batches of 32 sequences. The train--val gap stays small, so there is no sign of overfitting in one epoch. Lower loss did \emph{not} remove repetition at rep.\ penalty 1.0 (\S3), so we do not read response quality off this curve.
+\textbf{SFT} (Fig.~\ref{fig:sft}). Validation loss first rises from 1.415 (step 0) to 1.441 (step 200), then falls steadily to 1.387 at the final step, which is also the best checkpoint. The early rise lines up with the end of warmup, when the LR reaches its peak (29 warmup steps). My reading is that the model first drops some of its pre-training habits and only then fits the instruction format. Training loss is noisy ($\pm$0.05) because each logged point averages 10 batches of 32 sequences. The train--val gap stays small, so there is no sign of overfitting in one epoch. Lower loss did \emph{not} remove repetition at rep.\ penalty 1.0 (\S3), so I do not read response quality off this curve.
 
 \begin{figure}[tbp]
 \centering
@@ -180,14 +180,14 @@ We kept $\beta$, the DPO learning rate, the batch sizes, the epoch counts and th
 \textbf{DPO} (Fig.~\ref{fig:dpo}). Both runs start at exactly accuracy 0, margin 0 and loss $\ln 2$, then reach most of their final accuracy within the first 50 steps (HH 0.59, UF 0.69 at step 50).
 \textbf{HH:} accuracy rises slowly to 0.647 at the final step (selected), the margin grows linearly to 0.27, and validation loss reaches 0.630. The training loss and margin are noisy, which is typical of HH-RLHF's noisy single-annotator labels.
 \textbf{UF:} a much clearer signal. Accuracy is 0.72 by step 100 and 0.73 by step 150; the best is 0.736 at step 200 (selected), and it ends at 0.733. The margin, however, keeps growing to 0.75 (validation loss 0.535). After step 200 the policy therefore becomes \emph{more confident about the same pairs} without ranking more pairs correctly.
-\textbf{In both runs the margin comes mostly from pushing rejected responses down.} UF's chosen reward stays near zero ($-0.07$) while the rejected reward falls to $-0.82$. HH's chosen reward also falls ($-0.32$), just less than the rejected one ($-0.59$). This is the known DPO pattern where the likelihood of \emph{both} responses goes down. It means good validation diagnostics do not guarantee better generations, as \S5 confirms for UF.
+\textbf{In both runs the margin comes mostly from pushing rejected responses down.} UF's chosen reward stays near zero ($-0.07$) while the rejected reward falls to $-0.82$. HH's chosen reward also falls ($-0.32$), just less than the rejected one ($-0.59$). This matches a known DPO effect in which the likelihood of \emph{both} responses goes down. It means good validation diagnostics do not guarantee better generations, as \S5 confirms for UF.
 
 \textbf{LoRA-DPO} (val, 20 pairs; \code{outputs/lora\_dpo\_run}, \code{outputs/lora\_dpo\_1ep}): after 3 epochs (75 steps), loss 0.125, reward accuracy 1.00 and margin 2.14; after 1 epoch (25 steps), loss 0.482, accuracy 1.00 and margin 0.48. Accuracy is already 1.00 at the first evaluation (step 5) because the chosen responses (insults, exclamation marks) are easy to tell apart from the rejected ones, so only the margin separates the two runs. Unlike the from-scratch runs, the chosen reward \emph{rises} here ($+1.07$, rejected $-1.07$ after 3 epochs): with a higher learning rate and a consistent, easy style signal, the adapter raises the likelihood of the target style rather than only lowering the rejected one.
 
 % =====================================================================
 \section{DPO-versus-SFT Results}
 
-\textbf{Protocol.} Before full generation we ran a sanity check on 3 HH prompts per checkpoint to confirm paths, tokenizer, prompt format, EOS stopping and output length. The judge is \code{google/gemini-3.6-flash} via \code{kaggle\_benchmarks}, at temperature 0, run from a saved Kaggle benchmark notebook (\code{pa2-judge}) on the saved pairwise JSONL files only. Each request covers 5 pairs. We checkpoint after every batch, sleep $\ge$5 s between attempts, retry up to 3 attempts per batch, log failures to \code{*\_failures.jsonl}, and resume with \code{-{}-reuse\_judgments}. Each pair's A/B order is randomized (seed 42), so the candidate is A in 151/300 and 13/24 pairs. The judge sees only ``Response A'' and ``Response B''; model identities are mapped back only after a verdict is parsed. A batch counts as invalid if any item's JSON is missing or malformed, and the whole batch is then retried. Anything still unresolved would have been counted as \emph{unknown}.
+\textbf{Protocol.} Before full generation I ran a sanity check on 3 HH prompts per checkpoint to confirm paths, tokenizer, prompt format, EOS stopping and output length. The judge is \code{google/gemini-3.6-flash} via \code{kaggle\_benchmarks}, at temperature 0, run from a saved Kaggle benchmark notebook (\code{pa2-judge}) on the saved pairwise JSONL files only. Each request covers 5 pairs. I checkpoint after every batch, sleep $\ge$5 s between attempts, retry up to 3 attempts per batch, log failures to \code{*\_failures.jsonl}, and resume with \code{-{}-reuse\_judgments}. Each pair's A/B order is randomized (seed 42), so the candidate is A in 151/300 and 13/24 pairs. The judge sees only ``Response A'' and ``Response B''; model identities are mapped back only after a verdict is parsed. A batch counts as invalid if any item's JSON is missing or malformed, and the whole batch is then retried. Anything still unresolved would have been counted as \emph{unknown}.
 
 \begin{table}[H]
 \centering\small
@@ -267,7 +267,7 @@ For the 3-epoch adapter, the style wins come from all four categories (coding 4/
 \section{Interpretation and Error Analysis}
 
 \textbf{Which model is better, and by how much?}
-\emph{Observed:} on the HH safety set, HH-DPO beats SFT by 60 more wins than losses (61.7\% excl.\ ties, CI clear of 50\%). On AlpacaEval, UF-DPO and SFT are statistically tied (49.8\%). In our extra comparison, SFT does \emph{not} beat the base model on AlpacaEval (45.4\%, $p{=}0.15$).
+\emph{Observed:} on the HH safety set, HH-DPO beats SFT by 60 more wins than losses (61.7\% excl.\ ties, CI clear of 50\%). On AlpacaEval, UF-DPO and SFT are statistically tied (49.8\%). In my extra comparison, SFT does \emph{not} beat the base model on AlpacaEval (45.4\%, $p{=}0.15$).
 
 \textbf{HH-DPO: better answers, not more refusals.} \emph{Observed:} neither model reliably refuses. A phrase match for refusal or disclaimer language (``I cannot'', ``I'm sorry, but'', ``I don't have the capability'', ``illegal'', \ldots) in the first 300 characters fires on 58/300 responses for \emph{both} SFT and HH-DPO. HH-DPO's responses are 17\% shorter (116 vs 139 words), and the gains concentrate in self-harm support (25/4), harmful instructions (17/5), hate (18/6) and calibration (19/7).
 \emph{Interpretation:} HH-RLHF ``chosen'' responses are mostly short, gentle and on-topic rather than explicit refusals. With $\beta{=}0.1$ and $10^{-6}$ for one epoch (final margin only 0.27), DPO moved the model toward that register: more empathy, fewer harmful details and less confabulation. It did not install a refusal policy. Table~\ref{tab:ex} shows typical cases: a supportive self-harm message where SFT misread the distress as a breakup (win), and a privacy request where both models comply and DPO's list of ``public records'' wrongly includes tax returns and driver's licenses (loss). Privacy (9/18) and legal/financial (12/17) regress; there HH-DPO is \emph{more} directly compliant (e.g.\ ``do not respond to the debt collector''), while SFT more often opens with a disclaimer (16 vs 9 disclaimers in legal/financial). The likely cause is a mismatch between the preference data and the eval set: privacy and doxxing requests are rare in HH-RLHF's single-turn subset, and in many HH pairs both responses comply, so the chosen one is simply the more helpful compliance.
@@ -275,10 +275,10 @@ For the 3-epoch adapter, the style wins come from all four categories (coding 4/
 \textbf{UF-DPO: the validation gain did not reach the generations.} \emph{Observed:} validation reward accuracy of 0.736 and a growing margin, yet 49.8\% against SFT. UF-DPO answers are 38\% longer (196 vs 142 words). The judge does \emph{not} reward this length: when UF-DPO is $>$1.2$\times$ longer it wins only 45\% of decisive pairs, versus 70\% when it is shorter (Table~\ref{tab:cat}), and across all three comparisons the shorter answer won more decisive pairs (e.g.\ 136 vs 117 for UF).
 \emph{Interpretation:} three effects, each with supporting evidence. (i) \emph{Length bias learned from the data:} UF chosen responses were truncated more often than rejected ones (27\% vs 19\%), so they are longer, and DPO picked up ``longer'' as a cheap proxy. (ii) \emph{Likelihood displacement:} the chosen reward stays $\approx$0 while the rejected reward falls, so the policy mostly learned what to avoid, and greedy decoding exposes little of that. (iii) \emph{A 0.5B model cannot use the content signal:} judge reasons for UF-DPO losses are mostly factual (\emph{``claims wreaths ward off evil spirits''}, \emph{``fold in the softened milk''}), and DPO on preference labels cannot add knowledge the model lacks. Its wins are mostly about structure and coherence (a properly formatted Jira ticket; less repetition in the extinct-bears answer, where both outputs hallucinate). The two roughly cancel out, giving a tie overall.
 
-\textbf{SFT vs base.} \emph{Observed:} base Qwen2.5-0.5B with the same template and rep.\ penalty 1.1 slightly beats SFT, with large losses on \code{oasst} (17/36). \emph{Interpretation:} the base checkpoint already follows instructions reasonably well, and 33\% of our SFT targets were truncated at 512 tokens. That, together with UltraChat's generic style, can teach blander, less specific answers. The difference is not significant ($p{=}0.15$), so we only conclude that SFT did not measurably improve AlpacaEval quality in our setup.
+\textbf{SFT vs base.} \emph{Observed:} base Qwen2.5-0.5B with the same template and rep.\ penalty 1.1 slightly beats SFT, with large losses on \code{oasst} (17/36). \emph{Interpretation:} the base checkpoint already follows instructions reasonably well, and 33\% of my SFT targets were truncated at 512 tokens. That, together with UltraChat's generic style, can teach blander, less specific answers. The difference is not significant ($p{=}0.15$), so I only conclude that SFT did not measurably improve AlpacaEval quality in my setup.
 
 \textbf{Persona: a clear style/usefulness trade-off.} \emph{Observed:} 3 epochs give a strong persona (18/1 on style) but lower helpfulness (10/13), losing every decided general-help prompt (0/5). On safety-sensitive prompts the adapter scolds a distressed user (\emph{``You're so stupid\ldots you're a total failure''}; base wins on all three criteria) and, for a deep cut, gives no actual first-aid steps. The 1-epoch adapter is indistinguishable from the base model on style (0/0/24).
-\emph{Interpretation:} every chosen response in the training data is insulting, and few are about safety, so the adapter learned ``insult the user'' rather than ``insult the mistake, then help''. The 1-epoch vs 3-epoch comparison shows a sharp threshold rather than a smooth trade-off. Validation reward accuracy (1.0 in both) did not distinguish them; only the margin and the generations did.
+\emph{Interpretation:} every chosen response in the training data is insulting, and few are about safety, so the adapter learned ``insult the user'' rather than ``insult the mistake, then help''. The 1-epoch vs 3-epoch comparison suggests the style appears suddenly once training goes far enough, not gradually. Validation reward accuracy (1.0 in both) did not distinguish them; only the margin and the generations did.
 
 \begin{table}[H]
 \centering\scriptsize
@@ -301,7 +301,7 @@ Meaning of Christmas wreaths (alp-0001) & longer answer adding that wreaths ``wa
 % =====================================================================
 \section{Limitations and Reproducibility}
 
-\textbf{Limitations.} (1) \emph{One judge, one seed.} All results rest on a single LLM judge and one training seed; we did not measure seed variance. (2) \emph{Judge bias and errors.} The judge picks position A 55--59\% of the time; with the candidate placed in A in 151/300 pairs this cancels out in the totals but adds noise. We also found clear mistakes, e.g.\ it rewarded a persona answer suggesting ``put some salt in his mouth'' to punish a roommate. (3) \emph{Small sets.} 300 prompts give $\pm$6-point CIs, and the 24 persona prompts support only qualitative conclusions. (4) \emph{Truncation.} 33\% of SFT and 19--27\% of UF responses were cut at 512 tokens. (5) \emph{The refusal count is a heuristic phrase match}, not a judged label. (6) We ran no $\beta$ or learning-rate sweep for DPO, so ``UF-DPO $\approx$ SFT'' applies only to the guide recipe.
+\textbf{Limitations.} (1) \emph{One judge, one seed.} All results rest on a single LLM judge and one training seed; I did not measure seed variance. (2) \emph{Judge bias and errors.} The judge picks position A 55--59\% of the time; with the candidate placed in A in 151/300 pairs this cancels out in the totals but adds noise. I also found clear mistakes, e.g.\ it rewarded a persona answer suggesting ``put some salt in his mouth'' to punish a roommate. (3) \emph{Small sets.} 300 prompts give $\pm$6-point CIs, and the 24 persona prompts support only qualitative conclusions. (4) \emph{Truncation.} 33\% of SFT and 19--27\% of UF responses were cut at 512 tokens. (5) \emph{The refusal count is a heuristic phrase match}, not a judged label. (6) I ran no $\beta$ or learning-rate sweep for DPO, so ``UF-DPO $\approx$ SFT'' applies only to the guide recipe.
 
 \textbf{Reproducibility --- key paths in the repository.}
 \begin{itemize}

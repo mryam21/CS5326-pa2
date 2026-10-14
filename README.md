@@ -29,7 +29,7 @@ persona adapter on `HuggingFaceTB/SmolLM2-360M-Instruct`, evaluated with blinded
 | Grader interface | `submission_adapter.py` |
 | Prompt template | `prompt_format.py` |
 
-Tests: `PYTHONPATH=. python -m pytest -q tests/` (public adapter smoke tests + our SFT/DPO unit tests; CPU only).
+Tests: `PYTHONPATH=. python -m pytest -q tests/` (public adapter smoke tests + my SFT/DPO unit tests; CPU only).
 
 ## Reproducing (Kaggle, GPU T4 x2, seed 42 everywhere)
 
